@@ -20,16 +20,8 @@
 import { Cast } from "./cast.ts";
 import { TypedSignal } from "./signal.ts";
 
-export const TRUE = Symbol("True");
-export type TRUE = typeof TRUE;
-export const FALSE = Symbol("False");
-export type FALSE = typeof FALSE;
-export const UNKNOWN = Symbol("Unknown");
-export type UNKNOWN = typeof UNKNOWN;
-export type UnsureBool = TRUE | FALSE | UNKNOWN;
-
-export const NO_CHANGE = Symbol("NoChange");
-export type NO_CHANGE = typeof NO_CHANGE;
+import { TRUE, FALSE, UnsureBool } from "https://deno.land/x/unsure_bool@v1.0.0/mod.ts";
+export * from "https://deno.land/x/unsure_bool@v1.0.0/mod.ts";
 
 export class Bool2Unsure extends Cast<boolean, UnsureBool>{
     constructor(input: TypedSignal<boolean>) {
