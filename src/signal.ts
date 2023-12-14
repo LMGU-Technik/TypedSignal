@@ -34,4 +34,10 @@ export abstract class TypedSignal<T>{
     public equals(val: T) {
         return this.getValue() === val;
     }
+    public dispose() {
+        this.listener.clear();
+    }
+    [Symbol.dispose]() {
+        this.dispose();
+    }
 }
