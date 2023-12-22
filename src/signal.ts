@@ -20,22 +20,35 @@
 type Callback<T> = (value: T) => void;
 
 export abstract class TypedSignal<T>{
+    protected listener = new Set<Callback<T>>();
     public onChange(cb: Callback<T>) {
         this.listener.add(cb);
     }
     public removeListener(cb: Callback<T>) {
         this.listener.delete(cb);
     }
-    protected listener = new Set<Callback<T>>();
+
+    protected disposeListener = new Set<Callback<TypedSignal<T>>>();
+    public onDispose(cb: Callback<TypedSignal<T>>) {
+        this.disposeListener.add(cb);
+    }
+    public removeDisposeListener(cb: Callback<TypedSignal<T>>) {
+        this.disposeListener.delete(cb);
+    }
+
     protected valueUpdated(val: T) {
         this.listener.forEach(_ => _(val));
     }
+
     public abstract getValue(): T;
     public equals(val: T) {
         return this.getValue() === val;
     }
+
     public dispose() {
         this.listener.clear();
+        this.disposeListener.forEach(_ => _(this));
+        this.disposeListener.clear();
     }
     [Symbol.dispose]() {
         this.dispose();
