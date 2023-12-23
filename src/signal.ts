@@ -1,4 +1,4 @@
-/* 
+/*
 * LMGU-Technik TypedSocket
 
 * Copyright (C) 2023 Hans Schallmoser
@@ -19,38 +19,164 @@
 
 type Callback<T> = (value: T) => void;
 
-export abstract class TypedSignal<T>{
+/**
+ * Error thrown when trying to use disposed TypedSignal
+ */
+export class DisposedError extends Error {
+    constructor() {
+        super(`TypedSignal used after disposal`);
+    }
+}
+
+/**
+ * base of all TypedSignals
+ */
+export abstract class TypedSignal<T> {
+    constructor() {
+        // try to enforce calling checkDisposed on getValue
+        const getValue = this.getValue;
+        this.getValue = () => {
+            this.checkDisposed();
+            return getValue.apply(this);
+        };
+    }
+
+    private disposed = false;
     protected listener = new Set<Callback<T>>();
+
+    /**
+     * get notified when value changes
+     * @param cb called when value changes with new value as argument
+     */
     public onChange(cb: Callback<T>) {
+        this.checkDisposed();
         this.listener.add(cb);
     }
+
+    /**
+     * remove listener added with `onChange`
+     * @param cb reference to callback that was originally provided
+     */
     public removeListener(cb: Callback<T>) {
         this.listener.delete(cb);
     }
 
-    protected disposeListener = new Set<Callback<TypedSignal<T>>>();
-    public onDispose(cb: Callback<TypedSignal<T>>) {
+    protected disposeListener = new Set<Callback<void>>();
+
+    /**
+     * get notified when object gets disposed
+     * @param cb called when object gets disposed
+     */
+    public onDispose(cb: Callback<void>) {
+        this.checkDisposed();
         this.disposeListener.add(cb);
     }
-    public removeDisposeListener(cb: Callback<TypedSignal<T>>) {
+
+    /**
+     * remove listener added with `onDispose`
+     * @param cb reference to callback that was originally provided
+     */
+    public removeDisposeListener(cb: Callback<void>) {
         this.disposeListener.delete(cb);
     }
 
-    protected valueUpdated(val: T) {
-        this.listener.forEach(_ => _(val));
+    /**
+     * Internal: call the onChange listeners
+     * @param value new value
+     */
+    protected valueUpdated(value: T) {
+        this.checkDisposed();
+        this.listener.forEach(($) => $(value));
     }
 
+    /**
+     * reads the current value
+     */
     public abstract getValue(): T;
-    public equals(val: T) {
-        return this.getValue() === val;
+
+    /**
+     * short for `.getValue()`
+     */
+    public get value() {
+        return this.getValue();
     }
 
+    /**
+     * Check if value is equal to
+     */
+    public equals(value: T) {
+        this.checkDisposed();
+        return this.getValue() === value;
+    }
+
+    /**
+     * dispose object
+     */
     public dispose() {
         this.listener.clear();
-        this.disposeListener.forEach(_ => _(this));
+        this.disposeListener.forEach(($) => $());
         this.disposeListener.clear();
     }
+
+    /**
+     * alias of `.dispose()`
+     */
     [Symbol.dispose]() {
         this.dispose();
     }
+
+    public isDisposed() {
+        return this.disposed;
+    }
+
+    /**
+     * Internal: Should be called whenever someone tries to access the signal
+     */
+    protected checkDisposed() {
+        if (this.disposed) {
+            TypedSignal.alreadyDisposed();
+        }
+    }
+
+    /**
+     * throw DisposedError
+     */
+    protected static alreadyDisposed(): never {
+        throw new DisposedError();
+    }
+}
+
+/**
+ * basis for implementing setters
+ */
+export abstract class TypedSignalWithState<T> extends TypedSignal<T> {
+    /**
+     * Internal: update state
+     * @param value new value
+     */
+    protected updateValue(value: T) {
+        this.checkDisposed();
+        if (value !== this.state) {
+            this.state = value;
+            this.valueUpdated(value);
+        }
+    }
+
+    /**
+     * reads the current value
+     */
+    protected abstract state: T;
+    public getValue(): T {
+        this.checkDisposed();
+        return this.state;
+    }
+}
+
+/**
+ * basis for implementing setters
+ */
+export interface TypedSignalWithSetter<T> extends TypedSignal<T> {
+    setValue(value: T): void;
+    get value(): T;
+    set value(value: T);
 }

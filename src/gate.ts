@@ -1,4 +1,4 @@
-/* 
+/*
 * LMGU-Technik TypedSignal
 
 * Copyright (C) 2023 Hans Schallmoser
@@ -17,49 +17,43 @@
 * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-import { TypedSignal } from "./signal.ts";
+import { disposableInput } from "./disposeMgr.ts";
+import { TypedSignal, TypedSignalWithState } from "./signal.ts";
 
-export abstract class GateTypedSignal<A, B, T> extends TypedSignal<T>{
-    constructor(readonly sourceA: TypedSignal<A>, readonly sourceB: TypedSignal<B>) {
+export abstract class TypedABLogicGateSignal<A, B = A, T = A | B>
+    extends TypedSignalWithState<T> {
+    constructor(
+        private readonly sourceA: TypedSignal<A>,
+        private readonly sourceB: TypedSignal<B>,
+    ) {
         super();
-        this.recompute();
-        sourceA.onChange(() => {
-            this.recompute();
-        });
-        sourceB.onChange(() => {
-            this.recompute();
-        });
+        disposableInput(this, sourceA, this.recompute);
+        disposableInput(this, sourceB, this.recompute);
+        this.state = this.recompute();
     }
-    protected recompute() {
-        const prevState = this.state;
-        this.state = this.render(this.sourceA, this.sourceB);
-        if (prevState !== this.state)
-            this.valueUpdated(this.state);
+    private recompute() {
+        const state = this.render(this.sourceA, this.sourceB);
+        this.updateValue(state);
+        return state;
     }
     protected abstract render(a: TypedSignal<A>, b: TypedSignal<B>): T;
-    // @ts-expect-error init is done in constructor > recompute()
     protected state: T;
-    public getValue(): T {
-        return this.state;
-    }
 }
 
-export abstract class MultiGateSame<T, P = T> extends TypedSignal<P>{
-    constructor(readonly sources: TypedSignal<T>[]) {
+export abstract class TypedArrayLogicGateSignal<T, P = T>
+    extends TypedSignalWithState<P> {
+    constructor(private readonly inputs: readonly TypedSignal<T>[]) {
         super();
-        this.recompute();
-        sources.forEach(st => st.onChange(() => this.recompute()));
+        for (const input of inputs) {
+            disposableInput(this, input, this.recompute);
+        }
+        this.state = this.recompute();
     }
-    protected recompute() {
-        const prevState = this.state;
-        this.state = this.render(this.sources);
-        if (prevState !== this.state)
-            this.valueUpdated(this.state);
+    private recompute() {
+        const state = this.render(this.inputs);
+        this.updateValue(state);
+        return state;
     }
-    protected abstract render(src: TypedSignal<T>[]): P;
-    // @ts-expect-error init is done in constructor > recompute()
+    protected abstract render(src: readonly TypedSignal<T>[]): P;
     protected state: P;
-    public getValue(): P {
-        return this.state;
-    }
 }

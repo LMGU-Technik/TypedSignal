@@ -1,4 +1,4 @@
-/* 
+/*
 * LMGU-Technik TypedSignal
 
 * Copyright (C) 2023 Hans Schallmoser
@@ -17,73 +17,82 @@
 * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-import { MultiGateSame } from "./gate.ts";
+import { TypedArrayLogicGateSignal } from "./gate.ts";
 import { TypedSignal } from "./signal.ts";
 import { FALSE, TRUE, UNKNOWN, UnsureBool } from "./unsureBool.ts";
 
-abstract class LogicGateMulti extends MultiGateSame<boolean>{
-
-}
-
-export class And extends LogicGateMulti {
-    protected render(src: TypedSignal<boolean>[]): boolean {
-        return src.map(_ => _.getValue()).reduce((prev, curr) => prev && curr, true);
+export class SignalAnd extends TypedArrayLogicGateSignal<boolean> {
+    protected render(inputs: readonly TypedSignal<boolean>[]): boolean {
+        return inputs.map((_) => _.getValue()).reduce(
+            (prev, curr) => prev && curr,
+            true,
+        );
     }
 }
 
-export class Or extends LogicGateMulti {
-    protected render(src: TypedSignal<boolean>[]): boolean {
-        return src.map(_ => _.getValue()).reduce((prev, curr) => prev || curr, false);
+export class SignalOr extends TypedArrayLogicGateSignal<boolean> {
+    protected render(inputs: readonly TypedSignal<boolean>[]): boolean {
+        return inputs.map((_) => _.getValue()).reduce(
+            (prev, curr) => prev || curr,
+            false,
+        );
     }
 }
 
-abstract class LogicGateMultiUnsure extends MultiGateSame<UnsureBool, UnsureBool>{
-
-}
-
-export class AndUnsure extends LogicGateMultiUnsure {
-    constructor(readonly sources: TypedSignal<UnsureBool>[], readonly partial: boolean) {
-        super(sources);
+export class SignalAndUnsure extends TypedArrayLogicGateSignal<UnsureBool> {
+    constructor(
+        inputs: TypedSignal<UnsureBool>[],
+        private readonly partial: boolean,
+    ) {
+        super(inputs);
     }
-    protected render(src: TypedSignal<UnsureBool>[]): UnsureBool {
-        if (!src[0])
+    protected render(inputs: TypedSignal<UnsureBool>[]): UnsureBool {
+        if (!inputs[0]) {
             return UNKNOWN;
+        }
 
         let allTrue = true;
         let allFalse = true;
-        for (const i of src.map(_ => _.getValue())) {
-            if (i === TRUE)
+        for (const input of inputs.map((_) => _.getValue())) {
+            if (input === TRUE) {
                 allFalse = false;
+            }
 
-            if (i === FALSE)
+            if (input === FALSE) {
                 allTrue = false;
+            }
 
-            if (i === UNKNOWN)
+            if (input === UNKNOWN) {
                 return UNKNOWN;
+            }
         }
-        if (allTrue)
+        if (allTrue) {
             return TRUE;
-        else if (allFalse)
+        } else if (allFalse) {
             return FALSE;
-        else if (this.partial)
+        } else if (this.partial) {
             return UNKNOWN;
-        else
+        } else {
             return FALSE;
+        }
     }
 }
 
-export class OrUnsure extends LogicGateMultiUnsure {
-    protected render(src: TypedSignal<UnsureBool>[]): UnsureBool {
-        if (!src[0])
+export class SignalOrUnsure extends TypedArrayLogicGateSignal<UnsureBool> {
+    protected render(inputs: TypedSignal<UnsureBool>[]): UnsureBool {
+        if (!inputs[0]) {
             return UNKNOWN;
-
-        let res: UnsureBool = TRUE;
-        for (const i of src.map(_ => _.getValue())) {
-            if (i === UNKNOWN)
-                return UNKNOWN;
-            if (i === FALSE)
-                res = FALSE;
         }
-        return res;
+
+        let result: UnsureBool = TRUE;
+        for (const input of inputs.map((_) => _.getValue())) {
+            if (input === UNKNOWN) {
+                return UNKNOWN;
+            }
+            if (input === FALSE) {
+                result = FALSE;
+            }
+        }
+        return result;
     }
 }

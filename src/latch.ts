@@ -1,4 +1,4 @@
-/* 
+/*
 * LMGU-Technik TypedSignal
 
 * Copyright (C) 2023 Hans Schallmoser
@@ -17,29 +17,28 @@
 * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-import { TypedSignal } from "./signal.ts";
+import { disposableInput } from "./disposeMgr.ts";
+import { TypedSignal, TypedSignalWithState } from "./signal.ts";
 
-export class Latch<T> extends TypedSignal<T>{
-    constructor(readonly input: TypedSignal<T>, readonly latch: TypedSignal<boolean>) {
+export class SignalLatch<T> extends TypedSignalWithState<T> {
+    constructor(
+        readonly input: TypedSignal<T>,
+        readonly latch: TypedSignal<boolean>,
+    ) {
         super();
         this.state = this.input.getValue();
-        latch.onChange(forward => {
-            if (forward && this.state !== input.getValue()) {
-                this.valueUpdated(this.getValue());
+
+        disposableInput(this, latch, (forward: boolean) => {
+            if (forward) {
+                this.updateValue(this.getValue());
             }
         });
-        input.onChange(val => {
-            if (latch.getValue()) {
-                this.state = val;
+
+        disposableInput(this, input, (value: T) => {
+            if (latch.value) {
+                this.updateValue(value);
             }
         });
     }
     protected state: T;
-    public getValue(): T {
-        if (this.latch.getValue())
-            this.state = this.input.getValue();
-
-        return this.state;
-    }
 }
-

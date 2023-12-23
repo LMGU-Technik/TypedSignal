@@ -1,4 +1,4 @@
-/* 
+/*
 * LMGU-Technik TypedSignal
 
 * Copyright (C) 2023 Hans Schallmoser
@@ -17,15 +17,29 @@
 * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+import { disposableInput } from "./disposeMgr.ts";
 import { TypedSignal } from "./signal.ts";
 
-export class Relay<T> extends TypedSignal<T>{
-    constructor(readonly src: TypedSignal<T>) {
+export class SignalRelay<T> extends TypedSignal<T> {
+    constructor(readonly input: TypedSignal<T>) {
         super();
-        src.onChange(val => this.valueUpdated(val));
+        disposableInput(this, input, this.valueUpdated);
     }
 
     public getValue(): T {
-        return this.src.getValue();
+        this.checkDisposed();
+        return this.input.getValue();
+    }
+}
+
+export class TSRelay<In extends Out, Out> extends TypedSignal<Out> {
+    constructor(readonly input: TypedSignal<In>) {
+        super();
+        disposableInput(this, input, this.valueUpdated);
+    }
+
+    public getValue(): Out {
+        this.checkDisposed();
+        return this.input.getValue();
     }
 }

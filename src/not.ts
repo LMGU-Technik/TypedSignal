@@ -1,4 +1,4 @@
-/* 
+/*
 * LMGU-Technik TypedSignal
 
 * Copyright (C) 2023 Hans Schallmoser
@@ -17,33 +17,40 @@
 * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-import { TypedSignal } from "./signal.ts";
+import { disposableInput } from "./disposeMgr.ts";
+import { TypedSignal, TypedSignalWithState } from "./signal.ts";
 import { FALSE, TRUE, UNKNOWN, UnsureBool } from "./unsureBool.ts";
 
-export class Not extends TypedSignal<boolean>{
-    constructor(readonly src: TypedSignal<boolean>) {
+export class SignalNot extends TypedSignalWithState<boolean> {
+    constructor(input: TypedSignal<boolean>) {
         super();
-        src.onChange(val => this.valueUpdated(!val));
+        disposableInput(this, input, (value: boolean) => {
+            this.updateValue(!value);
+        });
+        this.state = !input.value;
     }
-
-    public getValue(): boolean {
-        return !this.src.getValue();
-    }
+    protected state: boolean;
 }
 
-export class NotUnsure extends TypedSignal<UnsureBool>{
-    constructor(readonly src: TypedSignal<UnsureBool>) {
+export class SignalNotUnsure extends TypedSignalWithState<UnsureBool> {
+    constructor(input: TypedSignal<UnsureBool>) {
         super();
-        src.onChange(() => this.valueUpdated(this.getValue()));
+        disposableInput(this, input, (value: UnsureBool) => {
+            const computed = SignalNotUnsure.compute(value);
+            this.updateValue(computed);
+        });
+        this.state = SignalNotUnsure.compute(input.getValue());
     }
 
-    public getValue(): UnsureBool {
-        const srcState = this.src.getValue();
-        if (srcState === TRUE)
+    protected state: UnsureBool;
+
+    public static compute(input: UnsureBool) {
+        if (input === TRUE) {
             return FALSE;
-        else if (srcState === FALSE)
+        } else if (input === FALSE) {
             return TRUE;
-        else
+        } else {
             return UNKNOWN;
+        }
     }
 }

@@ -17,18 +17,27 @@
 * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-import { SignalCast } from "./cast.ts";
 import { TypedSignal } from "./signal.ts";
 
-import {
-    FALSE,
-    TRUE,
-    UnsureBool,
-} from "https://deno.land/x/unsure_bool@v1.0.0/mod.ts";
-export * from "https://deno.land/x/unsure_bool@v1.0.0/mod.ts";
-
-export class CastUnsure extends SignalCast<UnsureBool | boolean, UnsureBool> {
-    constructor(input: TypedSignal<UnsureBool | boolean>) {
-        super(input, ($) => $ === true ? TRUE : ($ === false ? FALSE : $));
-    }
+/**
+ * disposes `signal` when signal gets disposed and cleans up callbacks when `signal` gets disposed
+ * @param onChange automatically bound to cls
+ */
+export function disposableInput<T, P>(
+    signal: TypedSignal<T>,
+    input: TypedSignal<P>,
+    onChange: (this: TypedSignal<T>, value: P) => void,
+) {
+    const cb = (value: P) => {
+        onChange.call(signal, value);
+    };
+    const dispose = () => {
+        signal.dispose();
+    };
+    input.onChange(cb);
+    input.onDispose(dispose);
+    signal.onDispose(() => {
+        input.removeListener(cb);
+        input.removeDisposeListener(dispose);
+    });
 }

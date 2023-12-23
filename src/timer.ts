@@ -1,4 +1,4 @@
-/* 
+/*
 * LMGU-Technik TypedSignal
 
 * Copyright (C) 2023 Hans Schallmoser
@@ -17,71 +17,77 @@
 * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-import { TypedSignal } from "./signal.ts";
-import { SignalVariable } from "./signalVariable.ts";
+import { SignalConstant } from "./const.ts";
+import { disposableInput } from "./disposeMgr.ts";
+import { TypedSignal, TypedSignalWithState } from "./signal.ts";
 
-export class Timer<T> extends TypedSignal<T>{
-    constructor(readonly defaultState: TypedSignal<T>, readonly activatedState: TypedSignal<T>) {
+export class Timer<T> extends TypedSignalWithState<T> {
+    constructor(
+        readonly defaultState: TypedSignal<T>,
+        readonly activatedState: TypedSignal<T>,
+    ) {
         super();
         this.state = this.defaultState.getValue();
-        defaultState.onChange(this.render);
-        activatedState.onChange(this.render);
+        disposableInput(this, defaultState, this.recompute);
+        disposableInput(this, activatedState, this.recompute);
+        this.recompute();
     }
 
-    protected activations = new Set<symbol>();
+    private activations = new Set<symbol>();
 
-    protected isActivated(): boolean {
+    public isActivated(): boolean {
         return this.activations.size > 0;
     }
 
     protected state: T;
 
-    public getValue(): T {
-        if (this.isActivated())
-            return this.activatedState.getValue();
-        else
-            return this.defaultState.getValue();
-    }
-
-    protected render() {
-        const currState = this.getValue();
-        if (currState !== this.state) {
-            this.state = currState;
-            this.valueUpdated(currState);
+    private recompute() {
+        if (this.isDisposed()) {
+            return;
         }
+
+        this.updateValue(
+            this.isActivated()
+                ? this.activatedState.value
+                : this.defaultState.value,
+        );
     }
 
-    public activate(time: number) {
-        const act = Symbol();
-        this.activations.add(act);
-        this.render();
+    private timeouts = new Set<number>();
+
+    public activate(time = Infinity) {
+        const activation = Symbol();
+        this.activations.add(activation);
+        this.recompute();
         if (time !== Infinity) {
-            setTimeout(() => {
-                this.activations.delete(act);
-                this.render();
+            const to = setTimeout(() => {
+                this.timeouts.delete(to);
+                this.activations.delete(activation);
+                this.recompute();
             }, time);
+            this.timeouts.add(to);
         }
-        return act;
+        return activation;
     }
 
-    public cancel(act: symbol) {
-        this.activations.delete(act);
-        this.render();
+    public cancel(activation: symbol) {
+        this.activations.delete(activation);
+        this.recompute();
     }
 
     public clear() {
         this.activations.clear();
-        this.render();
+        this.recompute();
     }
 }
 
-export class DirectTimer<T> extends Timer<T>{
+export class ValueTimer<T> extends Timer<T> {
     constructor(active: T, inactive: T) {
-        super(new SignalVariable(active), new SignalVariable(inactive));
+        super(new SignalConstant(active), new SignalConstant(inactive));
     }
 }
 
-export class BoolTimer extends DirectTimer<boolean>{
+export class BoolTimer extends ValueTimer<boolean> {
     constructor() {
         super(true, false);
     }

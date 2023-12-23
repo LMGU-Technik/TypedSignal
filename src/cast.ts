@@ -1,4 +1,4 @@
-/* 
+/*
 * LMGU-Technik TypedSignal
 
 * Copyright (C) 2023 Hans Schallmoser
@@ -17,16 +17,25 @@
 * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-import { TypedSignal } from "./signal.ts";
+import { disposableInput } from "./disposeMgr.ts";
+import { TypedSignal, TypedSignalWithState } from "./signal.ts";
 
-export class Cast<I, O> extends TypedSignal<O>{
-    constructor(readonly input: TypedSignal<I>, readonly cast: (val: I) => O) {
+/**
+ * cast TypedSignals
+ */
+export class SignalCast<In, Out> extends TypedSignalWithState<Out> {
+    /**
+     * @param cast function used to convert values
+     */
+    constructor(
+        input: TypedSignal<In>,
+        cast: (value: In) => Out,
+    ) {
         super();
-        input.onChange(val => {
-            this.valueUpdated(cast(val));
+        this.state = cast(input.value);
+        disposableInput(this, input, (value: In) => {
+            this.updateValue(cast(value));
         });
     }
-    public getValue(): O {
-        return this.cast(this.input.getValue());
-    }
+    protected state: Out;
 }

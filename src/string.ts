@@ -1,4 +1,4 @@
-/* 
+/*
 * LMGU-Technik TypedSignal
 
 * Copyright (C) 2023 Hans Schallmoser
@@ -17,37 +17,43 @@
 * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-import { TypedSignal } from "./signal.ts";
+import { disposableInput } from "./disposeMgr.ts";
+import { TypedSignal, TypedSignalWithState } from "./signal.ts";
 import { FALSE, TRUE, UNKNOWN, UnsureBool } from "./unsureBool.ts";
 
 export type ExtendsToString = string | boolean | UnsureBool | {
     toString(): string;
 };
 
-export class ToString<T extends ExtendsToString> extends TypedSignal<string>{
-    constructor(readonly src: TypedSignal<T>) {
+export class ToString<T extends ExtendsToString>
+    extends TypedSignalWithState<string> {
+    constructor(input: TypedSignal<T>) {
         super();
-        src.onChange(val => this.valueUpdated(this.toString(val)));
+        disposableInput(this, input, (value: T) => {
+            this.updateValue(ToString.toString(value));
+        });
+        this.state = ToString.toString(input.getValue());
     }
 
-    public getValue(): string {
-        return this.toString(this.src.getValue());
-    }
+    protected state: string;
 
-    protected toString(val: ExtendsToString): string {
-        if (typeof val === "string")
-            return val;
+    public static override toString(value: ExtendsToString): string {
+        if (typeof value === "string") {
+            return value;
+        }
 
-        if (val === true || val === TRUE)
+        if (value === true || value === TRUE) {
             return "true";
+        }
 
-        if (val === false || val === FALSE)
+        if (value === false || value === FALSE) {
             return "false";
+        }
 
-        if (val === UNKNOWN)
+        if (value === UNKNOWN) {
             return "unknown";
+        }
 
-        return val.toString();
-
+        return value.toString();
     }
 }

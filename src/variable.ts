@@ -1,4 +1,4 @@
-/* 
+/*
 * LMGU-Technik TypedSignal
 
 * Copyright (C) 2023 Hans Schallmoser
@@ -17,24 +17,18 @@
 * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-import { TypedSignal } from "./signal.ts";
+import { TypedSignalWithState } from "./signal.ts";
 
-export function awaitTypedSignal<T>(state: TypedSignal<T>, match: (val: T) => boolean = _ => !!_, timeout = Infinity) {
-    return new Promise<boolean>(resolve => {
-        if (match(state.getValue()))
-            return void resolve(true);
-
-        const cb = (val: T): void => {
-            if (match(val)) {
-                clearTimeout(to);
-                state.removeListener(cb);
-                resolve(true);
-            }
-        };
-        state.onChange(cb);
-        const to = timeout !== Infinity ? setTimeout(() => {
-            state.removeListener(cb);
-            resolve(false);
-        }, timeout) : 0;
-    });
+export class SignalVariable<T> extends TypedSignalWithState<T> {
+    constructor(initialValue: T) {
+        super();
+        this.state = initialValue;
+    }
+    protected state: T;
+    public override set value(value: T) {
+        this.setValue(value);
+    }
+    public setValue(value: T) {
+        this.updateValue(value);
+    }
 }

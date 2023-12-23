@@ -1,4 +1,4 @@
-/* 
+/*
 * LMGU-Technik TypedSignal
 
 * Copyright (C) 2023 Hans Schallmoser
@@ -17,29 +17,13 @@
 * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-import { TypedSignal } from "./signal.ts";
-import { NO_CHANGE } from "./unsureBool.ts";
+import { TypedSignalWithState } from "./signal.ts";
 
-export class SignalVariable<T> extends TypedSignal<T>{
-    constructor(initialValue: T) {
+/**
+ * Works like SignalVariable, but is read-only
+ */
+export class SignalConstant<T> extends TypedSignalWithState<T> {
+    constructor(readonly state: T) {
         super();
-        this.state = initialValue;
-    }
-    protected state: T;
-    public getValue(): T {
-        return this.state;
-    }
-    public setValue(val: T) {
-        if (this.state === val)
-            return;
-        this.state = val;
-        this.valueUpdated(this.state);
-    }
-    public pipe(signal: TypedSignal<T | NO_CHANGE>) {
-        signal.onChange(val => {
-            if (val !== NO_CHANGE) {
-                this.setValue(val);
-            }
-        });
     }
 }

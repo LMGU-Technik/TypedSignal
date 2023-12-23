@@ -1,4 +1,4 @@
-/* 
+/*
 * LMGU-Technik TypedSignal
 
 * Copyright (C) 2023 Hans Schallmoser
@@ -17,6 +17,26 @@
 * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-export { TypedSignal } from "./src/signal.ts";
-export { SignalVariable } from "./src/signalVariable.ts";
+export { awaitSignal } from "./src/await.ts";
+
+export { SignalCast } from "./src/cast.ts";
+export { SignalConstant } from "./src/const.ts";
+export { SignalLatch } from "./src/latch.ts";
+export {
+    SignalAnd,
+    SignalAndUnsure,
+    SignalOr,
+    SignalOrUnsure,
+} from "./src/logic.ts";
+export { SignalNot, SignalNotUnsure } from "./src/not.ts";
+export { SignalPipe } from "./src/pipe.ts";
+export { SignalRelay, TSRelay } from "./src/relay.ts";
+export { DisposedError, TypedSignal } from "./src/signal.ts";
+export { ToString } from "./src/string.ts";
+export { Switch } from "./src/switch.ts";
+export { BoolTimer, Timer, ValueTimer } from "./src/timer.ts";
+export { SignalVariable } from "./src/variable.ts";
+
+export type { TypedSignalWithSetter } from "./src/signal.ts";
+export type { ExtendsToString } from "./src/string.ts";
 export * from "./src/unsureBool.ts";

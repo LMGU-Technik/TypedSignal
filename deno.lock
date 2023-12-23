@@ -1,0 +1,6 @@
+{
+  "version": "3",
+  "remote": {
+    "https://deno.land/x/unsure_bool@v1.0.0/mod.ts": "0ca247fbe04c27c2e8b719b920c9240c2e086af0e1479e3196bd75ba4e055bac"
+  }
+}

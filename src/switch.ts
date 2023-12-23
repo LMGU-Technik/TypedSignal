@@ -1,4 +1,4 @@
-/* 
+/*
 * LMGU-Technik TypedSignal
 
 * Copyright (C) 2023 Hans Schallmoser
@@ -17,31 +17,28 @@
 * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-import { TypedSignal } from "./signal.ts";
+import { disposableInput } from "./disposeMgr.ts";
+import { TypedSignal, TypedSignalWithState } from "./signal.ts";
 
-export class Switch<T> extends TypedSignal<T>{
-    constructor(readonly sourceA: TypedSignal<T>, readonly sourceB: TypedSignal<T>, readonly input: TypedSignal<boolean>) {
+export class Switch<T> extends TypedSignalWithState<T> {
+    constructor(
+        readonly sourceA: TypedSignal<T>,
+        readonly sourceB: TypedSignal<T>,
+        readonly input: TypedSignal<boolean>,
+    ) {
         super();
-        this.recompute();
-        sourceA.onChange(() => {
-            this.recompute();
-        });
-        sourceB.onChange(() => {
-            this.recompute();
-        });
-        input.onChange(() => {
-            this.recompute();
-        });
+        disposableInput(this, sourceA, this.recompute);
+        disposableInput(this, sourceB, this.recompute);
+        disposableInput(this, input, this.recompute);
+        this.state = this.recompute();
     }
     protected recompute() {
-        const prevState = this.state;
-        this.state = this.input.getValue() ? this.sourceB.getValue() : this.sourceA.getValue();
-        if (prevState !== this.state)
-            this.valueUpdated(this.state);
+        const value = this.input.value
+            ? this.sourceB.value
+            : this.sourceA.value;
+
+        this.updateValue(value);
+        return value;
     }
-    // @ts-expect-error init is done in constructor > recompute()
     protected state: T;
-    public getValue(): T {
-        return this.state;
-    }
 }
