@@ -113,6 +113,7 @@ export abstract class TypedSignal<T> {
      * dispose object
      */
     public dispose() {
+        this.disposed = true;
         this.listener.clear();
         this.disposeListener.forEach(($) => $());
         this.disposeListener.clear();
