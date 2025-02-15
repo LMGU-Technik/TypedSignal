@@ -1,5 +1,8 @@
 # TypedSignal
 
+> [!CAUTION]
+> This is not maintained anymore. Consider using [preact signals](https://github.com/preactjs/signals) instead
+
 Build PLC-like applications with Deno.js. Write VHDL-like code with TypeScript.
 
 > [Looking out for the simple API docs because one of your libraries uses TypedSignal?](./consume_only.md)
